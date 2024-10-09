@@ -364,7 +364,8 @@ func (api *API) RegisterModel(model Model, opts ...ModelOpts) (name string, sche
 	}
 
 	if schema == nil {
-		return name, schema, fmt.Errorf("unsupported type: %v/%v", t.PkgPath(), t.Name())
+		schema = openapi3.NewObjectSchema()
+		// return name, schema, fmt.Errorf("unsupported type: %v/%v", t.PkgPath(), t.Name())
 	}
 
 	// Apply global customisation.
