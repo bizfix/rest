@@ -2,16 +2,16 @@
 
 Document a REST API with an OpenAPI 3.0 specification.
 
-* Code, not configuration.
-* No magic comments, tags, or decorators.
-* Use with or without a Go web framework.
-* Populates schema automatically using reflection.
+- Code, not configuration.
+- No magic comments, tags, or decorators.
+- Use with or without a Go web framework.
+- Populates schema automatically using reflection.
 
 ## Why would I want to use this?
 
-* Add OpenAPI documentation to an API.
-  * Create a `swagger.json` or `swagger.yaml` file.
-* Serve the Swagger UI to customers.
+- Add OpenAPI documentation to an API.
+  - Create a `swagger.json` or `swagger.yaml` file.
+- Serve the Swagger UI to customers.
 
 ## Examples
 
@@ -22,7 +22,7 @@ See the [./examples](./examples) directory for complete examples.
 ```go
 // Configure the models.
 api := rest.NewAPI("messages")
-api.StripPkgPaths = []string{"github.com/a-h/rest/example", "github.com/a-h/respond"}
+api.StripPkgPaths = []string{"github.com/bizfix/rest/example", "github.com/a-h/respond"}
 
 api.RegisterModel(rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
   status := s.Properties["statusCode"]
@@ -58,7 +58,7 @@ router.Handle("/topics", &get.Handler{})
 router.Handle("/topic", &post.Handler{})
 
 api := rest.NewAPI("messages")
-api.StripPkgPaths = []string{"github.com/a-h/rest/example", "github.com/a-h/respond"}
+api.StripPkgPaths = []string{"github.com/bizfix/rest/example", "github.com/a-h/respond"}
 
 // Register the error type with customisations.
 api.RegisterModel(rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
