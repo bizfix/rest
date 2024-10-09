@@ -1,4 +1,4 @@
-module github.com/a-h/rest
+module github.com/bizfix/rest
 
 go 1.21
 
@@ -6,6 +6,7 @@ require (
 	github.com/getkin/kin-openapi v0.124.0
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/google/go-cmp v0.5.9
+	github.com/swaggo/files/v2 v2.0.1
 	golang.org/x/exp v0.0.0-20240409090435-93d18d7e34b8
 	golang.org/x/tools v0.20.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -17,7 +18,6 @@ require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
 	github.com/go-openapi/spec v0.20.4 // indirect
-	github.com/swaggo/files/v2 v2.0.1 // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 )
