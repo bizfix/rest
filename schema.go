@@ -314,9 +314,9 @@ func (api *API) RegisterModel(model Model, opts ...ModelOpts) (name string, sche
 		schema.AdditionalProperties.Schema = getSchemaReferenceOrValue(elementName, elementSchema)
 	case reflect.Struct:
 		schema = openapi3.NewObjectSchema()
-		if schema.Description, schema.Deprecated, err = api.getTypeComment(t.PkgPath(), t.Name()); err != nil {
-			return name, schema, fmt.Errorf("failed to get comments for type %q: %w", name, err)
-		}
+		// if schema.Description, schema.Deprecated, err = api.getTypeComment(t.PkgPath(), t.Name()); err != nil {
+		// 	return name, schema, fmt.Errorf("failed to get comments for type %q: %w", name, err)
+		// }
 		schema.Properties = make(openapi3.Schemas)
 		for i := 0; i < t.NumField(); i++ {
 			f := t.Field(i)
@@ -349,11 +349,11 @@ func (api *API) RegisterModel(model Model, opts ...ModelOpts) (name string, sche
 				continue
 			}
 			ref := getSchemaReferenceOrValue(fieldSchemaName, fieldSchema)
-			if ref.Value != nil {
-				if ref.Value.Description, ref.Value.Deprecated, err = api.getTypeFieldComment(t.PkgPath(), t.Name(), f.Name); err != nil {
-					return name, schema, fmt.Errorf("failed to get comments for field %q in type %q: %w", fieldName, name, err)
-				}
-			}
+			// if ref.Value != nil {
+			// if ref.Value.Description, ref.Value.Deprecated, err = api.getTypeFieldComment(t.PkgPath(), t.Name(), f.Name); err != nil {
+			// 	return name, schema, fmt.Errorf("failed to get comments for field %q in type %q: %w", fieldName, name, err)
+			// }
+			// }
 			schema.Properties[fieldName] = ref
 			isPtr := f.Type.Kind() == reflect.Pointer
 			hasOmitEmptySet := slices.Contains(jsonTags, "omitempty")
