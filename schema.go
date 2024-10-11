@@ -412,15 +412,15 @@ func (api *API) getCommentsForPackage(pkg string) (pkgComments map[string]string
 // 	return
 // }
 
-func (api *API) getTypeFieldComment(pkg string, name string, field string) (comment string, deprecated bool, err error) {
-	pkgComments, err := api.getCommentsForPackage(pkg)
-	if err != nil {
-		return
-	}
-	comment = pkgComments[pkg+"."+name+"."+field]
-	deprecated = isMarkedAsDeprecated(comment)
-	return
-}
+// func (api *API) getTypeFieldComment(pkg string, name string, field string) (comment string, deprecated bool, err error) {
+// 	pkgComments, err := api.getCommentsForPackage(pkg)
+// 	if err != nil {
+// 		return
+// 	}
+// 	comment = pkgComments[pkg+"."+name+"."+field]
+// 	deprecated = isMarkedAsDeprecated(comment)
+// 	return
+// }
 
 func shouldBeReferenced(schema *openapi3.Schema) bool {
 	if schema.Type.Is(openapi3.TypeObject) && schema.AdditionalProperties.Schema == nil {
