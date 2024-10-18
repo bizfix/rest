@@ -67,7 +67,7 @@ type Params struct {
 	// have a name of "sort".
 	Query map[string]QueryParam
 
-	Header map[string]PathParam
+	Header map[string]HeaderParam
 }
 
 // PathParam is a paramater that's used in the path of a URL.
@@ -81,6 +81,20 @@ type PathParam struct {
 	Type PrimitiveType
 	// ApplyCustomSchema customises the OpenAPI schema for the path parameter.
 	ApplyCustomSchema func(s *openapi3.Parameter)
+}
+
+type HeaderParam struct {
+	// Description of the param.
+	Description string
+	// Regexp is a regular expression used to validate the param.
+	// An empty string means that no validation is applied.
+	Regexp string
+	// Type of the param (string, number, integer, boolean).
+	Type PrimitiveType
+	// ApplyCustomSchema customises the OpenAPI schema for the path parameter.
+	ApplyCustomSchema func(s *openapi3.Parameter)
+
+	Required bool
 }
 
 // QueryParam is a paramater that's used in the querystring of a URL.
@@ -203,8 +217,9 @@ func (api *API) Route(method, pattern string) (r *Route) {
 				Responses: make(map[int]Model),
 			},
 			Params: Params{
-				Path:  make(map[string]PathParam),
-				Query: make(map[string]QueryParam),
+				Path:   make(map[string]PathParam),
+				Query:  make(map[string]QueryParam),
+				Header: make(map[string]HeaderParam),
 			},
 		}
 		methodToRoute[Method(method)] = route
@@ -287,8 +302,8 @@ func (rm *Route) HasQueryParameter(name string, q QueryParam) *Route {
 	return rm
 }
 
-func (rm *Route) HasHeaderParameter(name string, q PathParam) *Route {
-	rm.Params.Header[name] = q
+func (rm *Route) HasHeaderParameter(name string, h HeaderParam) *Route {
+	rm.Params.Header[name] = h
 	return rm
 }
 

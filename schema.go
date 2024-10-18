@@ -67,6 +67,26 @@ func (api *API) createOpenAPI() (spec *openapi3.T, err error) {
 		for method, route := range methodToRoute {
 			op := &openapi3.Operation{}
 
+			// Add the Header params.
+			for _, k := range getSortedKeys(route.Params.Header) {
+				v := route.Params.Header[k]
+
+				ps := newPrimitiveSchema(v.Type).
+					WithPattern(v.Regexp)
+				headerParams := openapi3.NewHeaderParameter(k).
+					WithDescription(v.Description).
+					WithSchema(ps)
+
+				headerParams.Required = v.Required
+
+				// Apply schema customisation.
+				if v.ApplyCustomSchema != nil {
+					v.ApplyCustomSchema(headerParams)
+				}
+
+				op.AddParameter(headerParams)
+			}
+
 			// Add the query params.
 			for _, k := range getSortedKeys(route.Params.Query) {
 				v := route.Params.Query[k]
@@ -94,23 +114,6 @@ func (api *API) createOpenAPI() (spec *openapi3.T, err error) {
 				ps := newPrimitiveSchema(v.Type).
 					WithPattern(v.Regexp)
 				pathParam := openapi3.NewPathParameter(k).
-					WithDescription(v.Description).
-					WithSchema(ps)
-
-				// Apply schema customisation.
-				if v.ApplyCustomSchema != nil {
-					v.ApplyCustomSchema(pathParam)
-				}
-
-				op.AddParameter(pathParam)
-			}
-
-			for _, k := range getSortedKeys(route.Params.Header) {
-				v := route.Params.Path[k]
-
-				ps := newPrimitiveSchema(v.Type).
-					WithPattern(v.Regexp)
-				pathParam := openapi3.NewHeaderParameter(k).
 					WithDescription(v.Description).
 					WithSchema(ps)
 
