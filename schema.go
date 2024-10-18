@@ -105,6 +105,23 @@ func (api *API) createOpenAPI() (spec *openapi3.T, err error) {
 				op.AddParameter(pathParam)
 			}
 
+			for _, k := range getSortedKeys(route.Params.Header) {
+				v := route.Params.Path[k]
+
+				ps := newPrimitiveSchema(v.Type).
+					WithPattern(v.Regexp)
+				pathParam := openapi3.NewHeaderParameter(k).
+					WithDescription(v.Description).
+					WithSchema(ps)
+
+				// Apply schema customisation.
+				if v.ApplyCustomSchema != nil {
+					v.ApplyCustomSchema(pathParam)
+				}
+
+				op.AddParameter(pathParam)
+			}
+
 			// Handle request types.
 			if route.Models.Request.Type != nil {
 				name, schema, err := api.RegisterModel(route.Models.Request)

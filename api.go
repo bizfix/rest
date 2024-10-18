@@ -66,6 +66,8 @@ type Params struct {
 	// Query parameters are used in the querystring of the URL, e.g. /users/?sort={sortOrder} would
 	// have a name of "sort".
 	Query map[string]QueryParam
+
+	Header map[string]PathParam
 }
 
 // PathParam is a paramater that's used in the path of a URL.
@@ -282,6 +284,11 @@ func (rm *Route) HasPathParameter(name string, p PathParam) *Route {
 // HasQueryParameter configures a query parameter for the route.
 func (rm *Route) HasQueryParameter(name string, q QueryParam) *Route {
 	rm.Params.Query[name] = q
+	return rm
+}
+
+func (rm *Route) HasHeaderParameter(name string, q PathParam) *Route {
+	rm.Params.Header[name] = q
 	return rm
 }
 
