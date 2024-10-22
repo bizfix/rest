@@ -2,6 +2,7 @@ package rest
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"slices"
 	"sort"
@@ -131,9 +132,10 @@ func (api *API) createOpenAPI() (spec *openapi3.T, err error) {
 				if err != nil {
 					return spec, err
 				}
+				log.Println(route.Method, route.Pattern, route.RequestContentType)
 				op.RequestBody = &openapi3.RequestBodyRef{
 					Value: openapi3.NewRequestBody().WithContent(map[string]*openapi3.MediaType{
-						"application/json": {
+						route.RequestContentType: {
 							Schema: getSchemaReferenceOrValue(name, schema),
 						},
 					}),

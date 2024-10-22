@@ -56,6 +56,8 @@ type Route struct {
 	OperationID string
 	// Description for the route.
 	Description string
+
+	RequestContentType string
 }
 
 // Params is a route parameter.
@@ -211,8 +213,9 @@ func (api *API) Route(method, pattern string) (r *Route) {
 	route, ok := methodToRoute[Method(method)]
 	if !ok {
 		route = &Route{
-			Method:  Method(method),
-			Pattern: Pattern(pattern),
+			RequestContentType: "application/json",
+			Method:             Method(method),
+			Pattern:            Pattern(pattern),
 			Models: Models{
 				Responses: make(map[int]Model),
 			},
@@ -322,6 +325,11 @@ func (rm *Route) HasOperationID(operationID string) *Route {
 // HasDescription sets the description for the route.
 func (rm *Route) HasDescription(description string) *Route {
 	rm.Description = description
+	return rm
+}
+
+func (rm *Route) HasRequestContentType(contentType string) *Route {
+	rm.RequestContentType = contentType
 	return rm
 }
 
