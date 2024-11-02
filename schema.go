@@ -2,7 +2,6 @@ package rest
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"slices"
 	"sort"
@@ -132,7 +131,11 @@ func (api *API) createOpenAPI() (spec *openapi3.T, err error) {
 				if err != nil {
 					return spec, err
 				}
-				log.Println(route.Method, route.Pattern, route.RequestContentType)
+
+				// headerParams :=
+
+				// Value: openapi3.NewRequestBody().WithContent(openapi3.NewContentWithFormDataSchema(schema)),
+
 				op.RequestBody = &openapi3.RequestBodyRef{
 					Value: openapi3.NewRequestBody().WithContent(map[string]*openapi3.MediaType{
 						route.RequestContentType: {
@@ -303,6 +306,7 @@ func (api *API) RegisterModel(model Model, opts ...ModelOpts) (name string, sche
 
 	var elementName string
 	var elementSchema *openapi3.Schema
+
 	switch t.Kind() {
 	case reflect.Slice, reflect.Array:
 		elementName, elementSchema, err = api.RegisterModel(modelFromType(t.Elem()))
@@ -336,6 +340,13 @@ func (api *API) RegisterModel(model Model, opts ...ModelOpts) (name string, sche
 		schema.AdditionalProperties.Schema = getSchemaReferenceOrValue(elementName, elementSchema)
 	case reflect.Struct:
 		schema = openapi3.NewObjectSchema()
+
+		if t.Name() == "FileWithHeader" {
+			schema = openapi3.NewStringSchema().WithFormat("binary")
+			schema.Properties = make(openapi3.Schemas)
+			return
+		}
+
 		// if schema.Description, schema.Deprecated, err = api.getTypeComment(t.PkgPath(), t.Name()); err != nil {
 		// 	return name, schema, fmt.Errorf("failed to get comments for type %q: %w", name, err)
 		// }
