@@ -10,6 +10,7 @@ import (
 	"github.com/bizfix/rest/enums"
 	"github.com/bizfix/rest/getcomments/parser"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/google/uuid"
 	"golang.org/x/exp/constraints"
 )
 
@@ -311,6 +312,8 @@ func (api *API) RegisterModel(model Model, opts ...ModelOpts) (name string, sche
 	var elementSchema *openapi3.Schema
 
 	switch t.Kind() {
+	case reflect.TypeOf(uuid.UUID{}).Kind():
+		schema = openapi3.NewStringSchema()
 	case reflect.Slice, reflect.Array:
 		elementName, elementSchema, err = api.RegisterModel(modelFromType(t.Elem()))
 		if err != nil {
