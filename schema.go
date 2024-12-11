@@ -136,12 +136,15 @@ func (api *API) createOpenAPI() (spec *openapi3.T, err error) {
 
 				// Value: openapi3.NewRequestBody().WithContent(openapi3.NewContentWithFormDataSchema(schema)),
 
+				types := map[string]*openapi3.MediaType{}
+				for _, v := range route.RequestContentType {
+					types[v] = &openapi3.MediaType{
+						Schema: getSchemaReferenceOrValue(name, schema),
+					}
+				}
+
 				op.RequestBody = &openapi3.RequestBodyRef{
-					Value: openapi3.NewRequestBody().WithContent(map[string]*openapi3.MediaType{
-						route.RequestContentType: {
-							Schema: getSchemaReferenceOrValue(name, schema),
-						},
-					}),
+					Value: openapi3.NewRequestBody().WithContent(types),
 				}
 			}
 
