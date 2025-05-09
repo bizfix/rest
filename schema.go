@@ -313,7 +313,15 @@ func (api *API) RegisterModel(model Model, opts ...ModelOpts) (name string, sche
 
 	switch t.Kind() {
 	case reflect.TypeOf(uuid.UUID{}).Kind():
-		schema = openapi3.NewStringSchema()
+		schema = openapi3.NewUUIDSchema()
+	// case reflect.TypeOf(decimal.Decimal{}).Kind():
+	// log.Println("Decimal type found", t.Kind())
+	// schema = openapi3.NewStringSchema().
+	// schema = &openapi3.Schema{
+	// 	Type: &openapi3.Types{openapi3.TypeString},
+	// 	// Format: "string",
+	// 	// Example: "99.99",
+	// }
 	case reflect.Slice, reflect.Array:
 		elementName, elementSchema, err = api.RegisterModel(modelFromType(t.Elem()))
 		if err != nil {
@@ -349,6 +357,14 @@ func (api *API) RegisterModel(model Model, opts ...ModelOpts) (name string, sche
 
 		if t.Name() == "FileWithHeader" {
 			schema = openapi3.NewStringSchema().WithFormat("binary")
+			schema.Properties = make(openapi3.Schemas)
+			return
+		} else if t.Name() == "Decimal" {
+			schema = &openapi3.Schema{
+				Type:    &openapi3.Types{openapi3.TypeString},
+				Format:  "string",
+				Example: "99.99",
+			}
 			schema.Properties = make(openapi3.Schemas)
 			return
 		}
