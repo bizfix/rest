@@ -19,6 +19,80 @@ func WithApplyCustomSchemaToType(f func(t reflect.Type, s *openapi3.Schema)) API
 	}
 }
 
+type AuthSchemeType string
+
+func (a AuthSchemeType) String() string {
+	return string(a)
+}
+
+const (
+	AuthSchemeTypeAPIKey        AuthSchemeType = "apiKey"
+	AuthSchemeTypeHTTP          AuthSchemeType = "http"
+	AuthSchemeTypeOAuth2        AuthSchemeType = "oauth2"
+	AuthSchemeTypeOpenIDConnect AuthSchemeType = "openIdConnect"
+	AuthSchemeTypeLogin         AuthSchemeType = "login"
+)
+
+// AuthScheme defines the authentication scheme configuration for OpenAPI 3.0.
+// It supports various authentication types like APIKey, HTTP Bearer, OAuth2, etc.
+type AuthScheme struct {
+	// Name is the identifier for this authentication scheme (e.g., "apiKey", "bearerAuth")
+	Name string
+	// Type is the security scheme type: "apiKey", "http", "oauth2", "openIdConnect"
+	Type string
+	// Description is a brief description of the security scheme
+	Description string
+	// For apiKey type:
+	// - In: where the API key is passed ("query", "header", "cookie")
+	In string
+	// For apiKey type:
+	// - Name: the name of the parameter/header
+	ParamName string
+	// For http type:
+	// - Scheme: the HTTP authentication scheme name (e.g., "bearer")
+	Scheme string
+	// For http type with bearer:
+	// - BearerFormat: the format of the bearer token (e.g., "JWT")
+	BearerFormat string
+	// For oauth2:
+	// - Flows: OAuth2 flows configuration
+	Flows *openapi3.OAuthFlows
+	// For openIdConnect:
+	// - OpenIDConnectURL: the URL of the OpenID Connect discovery document
+	OpenIDConnectURL string
+}
+
+// NewAPIKeyAuth creates an API key authentication scheme.
+// Example: NewAPIKeyAuth("apiKey", "API Key in x_auth header", "header", "x_auth")
+func NewAPIKeyAuth(name, description, in, paramName string) AuthScheme {
+	return AuthScheme{
+		Name:        name,
+		Type:        string(AuthSchemeTypeAPIKey),
+		Description: description,
+		In:          in,
+		ParamName:   paramName,
+	}
+}
+
+// NewBearerAuth creates a bearer token authentication scheme.
+// Example: NewBearerAuth("bearerAuth", "Bearer token", "JWT")
+func NewBearerAuth(name, description, bearerFormat string) AuthScheme {
+	return AuthScheme{
+		Name:         name,
+		Type:         string(AuthSchemeTypeHTTP),
+		Description:  description,
+		Scheme:       "bearer",
+		BearerFormat: bearerFormat,
+	}
+}
+
+// WithGlobalAuth sets global authentication schemes for the API.
+func WithGlobalAuth(authSchemes ...AuthScheme) APIOpts {
+	return func(api *API) {
+		api.GlobalAuth = append(api.GlobalAuth, authSchemes...)
+	}
+}
+
 // NewAPI creates a new API from the router.
 func NewAPI(name string, opts ...APIOpts) *API {
 	api := &API{
@@ -26,8 +100,9 @@ func NewAPI(name string, opts ...APIOpts) *API {
 		KnownTypes: defaultKnownTypes,
 		Routes:     make(map[Pattern]MethodToRoute),
 		// map of model name to schema.
-		models:   make(map[string]*openapi3.Schema),
-		comments: make(map[string]map[string]string),
+		models:     make(map[string]*openapi3.Schema),
+		comments:   make(map[string]map[string]string),
+		GlobalAuth: []AuthScheme{},
 	}
 	for _, o := range opts {
 		o(api)
@@ -58,6 +133,10 @@ type Route struct {
 	Description string
 
 	RequestContentType []string
+
+	// Auth specifies which authentication schemes are required for this route.
+	// If empty, global authentication is used. Otherwise, only specified schemes are required.
+	Auth []string
 }
 
 // Params is a route parameter.
@@ -169,6 +248,9 @@ type API struct {
 	// Apply customisation to a specific type by checking the t parameter.
 	// Apply customisations to all types by ignoring the t parameter.
 	ApplyCustomSchemaToType func(t reflect.Type, s *openapi3.Schema)
+
+	// GlobalAuth defines the default authentication schemes for all routes.
+	GlobalAuth []AuthScheme
 }
 
 // Merge route data into the existing configuration.
@@ -330,6 +412,13 @@ func (rm *Route) HasDescription(description string) *Route {
 
 func (rm *Route) HasRequestContentType(contentType string) *Route {
 	rm.RequestContentType = append(rm.RequestContentType, contentType)
+	return rm
+}
+
+// HasAuth sets the authentication requirement for the route.
+// If no schemes are specified, the global authentication is used.
+func (rm *Route) HasAuth(schemes ...string) *Route {
+	rm.Auth = append(rm.Auth, schemes...)
 	return rm
 }
 

@@ -34,7 +34,8 @@ func TestMerge(t *testing.T) {
 			"userId": {},
 			"role":   {Description: "Role of the user"},
 		},
-		Query: make(map[string]rest.QueryParam),
+		Query:  make(map[string]rest.QueryParam),
+		Header: map[string]rest.HeaderParam{},
 	}
 	if diff := cmp.Diff(expected, api.Get(pattern).Params); diff != "" {
 		t.Error(diff)

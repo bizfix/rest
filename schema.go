@@ -62,6 +62,19 @@ func newPrimitiveSchema(paramType PrimitiveType) *openapi3.Schema {
 
 func (api *API) createOpenAPI() (spec *openapi3.T, err error) {
 	spec = newSpec(api.Name)
+
+	// Add security schemes to components if any are defined
+	if len(api.GlobalAuth) > 0 {
+		if spec.Components.SecuritySchemes == nil {
+			spec.Components.SecuritySchemes = make(openapi3.SecuritySchemes)
+		}
+		for _, auth := range api.GlobalAuth {
+			spec.Components.SecuritySchemes[auth.Name] = &openapi3.SecuritySchemeRef{
+				Value: authSchemeToOpenAPI(auth),
+			}
+		}
+	}
+
 	// Add all the routes.
 	for pattern, methodToRoute := range api.Routes {
 		path := &openapi3.PathItem{}
@@ -124,6 +137,25 @@ func (api *API) createOpenAPI() (spec *openapi3.T, err error) {
 				}
 
 				op.AddParameter(pathParam)
+			}
+
+			// Handle authentication
+			if len(route.Auth) > 0 {
+				// Route-specific auth
+				op.Security = openapi3.NewSecurityRequirements()
+				for _, authName := range route.Auth {
+					secReq := make(openapi3.SecurityRequirement)
+					secReq[authName] = []string{}
+					op.Security = op.Security.With(secReq)
+				}
+			} else if len(api.GlobalAuth) > 0 {
+				// Use global auth
+				op.Security = openapi3.NewSecurityRequirements()
+				for _, auth := range api.GlobalAuth {
+					secReq := make(openapi3.SecurityRequirement)
+					secReq[auth.Name] = []string{}
+					op.Security = op.Security.With(secReq)
+				}
 			}
 
 			// Handle request types.
@@ -504,4 +536,29 @@ func (api *API) normalizeTypeName(pkgPath, name string) string {
 		return normalizer.Replace(name)
 	}
 	return normalizer.Replace(pkgPath + "/" + name)
+}
+
+// authSchemeToOpenAPI converts an AuthScheme to an OpenAPI 3.0 SecurityScheme
+func authSchemeToOpenAPI(auth AuthScheme) *openapi3.SecurityScheme {
+	scheme := &openapi3.SecurityScheme{
+		Type:        auth.Type,
+		Description: auth.Description,
+	}
+
+	switch auth.Type {
+	case AuthSchemeTypeAPIKey.String():
+		scheme.In = auth.In
+		scheme.Name = auth.ParamName
+	case AuthSchemeTypeHTTP.String():
+		scheme.Scheme = auth.Scheme
+		if auth.BearerFormat != "" {
+			scheme.BearerFormat = auth.BearerFormat
+		}
+	case AuthSchemeTypeOAuth2.String():
+		scheme.Flows = auth.Flows
+	case AuthSchemeTypeOpenIDConnect.String():
+		scheme.OpenIdConnectUrl = auth.OpenIDConnectURL
+	}
+
+	return scheme
 }

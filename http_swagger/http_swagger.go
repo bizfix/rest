@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	swaggerFiles "github.com/swaggo/files/v2"
 	"github.com/swaggo/swag"
@@ -194,7 +195,13 @@ func Handler(configFns ...func(*Config)) http.HandlerFunc {
 
 		path := matches[2]
 
-		switch filepath.Ext(path) {
+		// Strip query parameters from the path for processing
+		cleanPath := path
+		if idx := strings.Index(path, "?"); idx != -1 {
+			cleanPath = path[:idx]
+		}
+
+		switch filepath.Ext(cleanPath) {
 		case ".html":
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
@@ -208,7 +215,7 @@ func Handler(configFns ...func(*Config)) http.HandlerFunc {
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		}
 
-		switch path {
+		switch cleanPath {
 		case "index.html":
 			_ = index.Execute(w, config)
 		case "doc.json":
@@ -223,6 +230,15 @@ func Handler(configFns ...func(*Config)) http.HandlerFunc {
 		case "":
 			http.Redirect(w, r, matches[1]+"/"+"index.html", http.StatusMovedPermanently)
 		default:
+			// Check if this is a request for a swagger spec file (.json or .yaml)
+			if filepath.Ext(cleanPath) == ".json" || filepath.Ext(cleanPath) == ".yaml" {
+				// Redirect to index.html with the spec URL as a parameter
+				// This allows the JavaScript to detect which spec was requested
+				redirectURL := matches[1] + "/index.html#?urls=" + url.QueryEscape("./"+cleanPath)
+				http.Redirect(w, r, redirectURL, http.StatusMovedPermanently)
+				return
+			}
+
 			var err error
 			r.URL, err = url.Parse(matches[2])
 			if err != nil {
@@ -311,9 +327,51 @@ window.onload = function() {
   {{- if .BeforeScript}}
   {{.BeforeScript}}
   {{- end}}
-  // Build a system
-  const ui = SwaggerUIBundle({
-	urls: {{.URLs}},
+  
+  // Function to get URL parameter from location hash or query string
+  function getSelectedUrl() {
+    // Check for URL parameter in hash (e.g., #?urls=./swagger.json)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    if (hashParams.has('urls')) {
+      return hashParams.get('urls');
+    }
+    
+    // Check for URL parameter in query string (e.g., ?urls=./swagger.json)
+    const queryParams = new URLSearchParams(window.location.search);
+    if (queryParams.has('urls')) {
+      return queryParams.get('urls');
+    }
+    
+    // Check for Swagger UI's urls.primaryName parameter (set by dropdown selection)
+    if (queryParams.has('urls.primaryName')) {
+      const primaryName = queryParams.get('urls.primaryName');
+      const urls = {{.URLs}};
+      // Find the URL matching the primaryName
+      for (const urlObj of urls) {
+        if (urlObj.name === primaryName) {
+          return urlObj.url;
+        }
+      }
+    }
+    
+    // Check if there's a direct path that suggests a spec file
+    // e.g., /swagger-ui/path/to/swagger.json → use that URL
+    const pathname = window.location.pathname;
+    const swaggerMatch = pathname.match(/\/([^/]*\.json|[^/]*\.yaml)$/);
+    if (swaggerMatch && swaggerMatch[1] !== 'index.html') {
+      // Return relative path to the spec
+      return './' + swaggerMatch[1];
+    }
+    
+    return null;
+  }
+  
+  // Get the selected URL
+  const selectedUrl = getSelectedUrl();
+  
+  // Build Swagger UI config
+  const uiConfig = {
+    urls: {{.URLs}},
     deepLinking: {{.DeepLinking}},
     docExpansion: "{{.DocExpansion}}",
     dom_id: "#{{.DomID}}",
@@ -334,7 +392,16 @@ window.onload = function() {
     {{- end}}
     layout: "{{$.Layout}}",
     defaultModelsExpandDepth: {{.DefaultModelsExpandDepth}}
-  })
+  };
+  
+  // If a specific URL was selected, use it instead of the urls array
+  if (selectedUrl) {
+    uiConfig.url = selectedUrl;
+    // Keep urls for the dropdown but set the selected one as the primary URL
+  }
+  
+  // Build a system
+  const ui = SwaggerUIBundle(uiConfig);
 
   window.ui = ui
   {{- if .AfterScript}}
